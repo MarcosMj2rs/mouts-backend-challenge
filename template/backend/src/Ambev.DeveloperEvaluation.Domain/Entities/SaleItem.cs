@@ -3,31 +3,35 @@
 namespace Ambev.DeveloperEvaluation.Domain.Entities
 {
     /// <summary>
-    /// Represents an item of a sale, containing product identity, quantity, price, discount and totals.
+    /// Represents a product item in a sale.
+    /// Responsible for applying quantity-based discount rules.
     /// </summary>
     public class SaleItem : BaseEntity
     {
+        private const int MinimumQuantity = 1;
         private const int MaximumQuantity = 20;
 
-        public Guid SaleId { get; set; }
+        public Guid SaleId { get; private set; }
 
-        public Guid ProductId { get; set; }
+        public Guid ProductId { get; private set; }
 
-        public string ProductDescription { get; set; } = string.Empty;
+        public string ProductDescription { get; private set; } = string.Empty;
 
         public int Quantity { get; private set; }
 
         public decimal UnitPrice { get; private set; }
 
-        public decimal Discount { get; private set; }
+        public decimal Subtotal { get; private set; }
+
+        public decimal DiscountAmount { get; private set; }
 
         public decimal TotalAmount { get; private set; }
 
         public bool IsCancelled { get; private set; }
 
-        public DateTime CreatedAt { get; set; }
+        public DateTime CreatedAt { get; private set; }
 
-        public DateTime? UpdatedAt { get; set; }
+        public DateTime? UpdatedAt { get; private set; }
 
         public SaleItem()
         {
@@ -37,25 +41,22 @@ namespace Ambev.DeveloperEvaluation.Domain.Entities
         public SaleItem(Guid productId, string productDescription, int quantity, decimal unitPrice)
         {
             Id = Guid.NewGuid();
-            ProductId = productId;
-            ProductDescription = productDescription;
             CreatedAt = DateTime.UtcNow;
 
+            SetProduct(productId, productDescription);
             SetQuantity(quantity);
             SetUnitPrice(unitPrice);
-            CalculateTotals();
+            RecalculateTotals();
         }
 
         public void Update(Guid productId, string productDescription, int quantity, decimal unitPrice)
         {
             EnsureNotCancelled();
 
-            ProductId = productId;
-            ProductDescription = productDescription;
-
+            SetProduct(productId, productDescription);
             SetQuantity(quantity);
             SetUnitPrice(unitPrice);
-            CalculateTotals();
+            RecalculateTotals();
 
             UpdatedAt = DateTime.UtcNow;
         }
@@ -68,9 +69,21 @@ namespace Ambev.DeveloperEvaluation.Domain.Entities
             UpdatedAt = DateTime.UtcNow;
         }
 
+        private void SetProduct(Guid productId, string productDescription)
+        {
+            if (productId == Guid.Empty)
+                throw new DomainException("Product id is required.");
+
+            if (string.IsNullOrWhiteSpace(productDescription))
+                throw new DomainException("Product description is required.");
+
+            ProductId = productId;
+            ProductDescription = productDescription.Trim();
+        }
+
         private void SetQuantity(int quantity)
         {
-            if (quantity <= 0)
+            if (quantity < MinimumQuantity)
                 throw new DomainException("Item quantity must be greater than zero.");
 
             if (quantity > MaximumQuantity)
@@ -87,14 +100,14 @@ namespace Ambev.DeveloperEvaluation.Domain.Entities
             UnitPrice = unitPrice;
         }
 
-        private void CalculateTotals()
+        private void RecalculateTotals()
         {
-            var grossAmount = Quantity * UnitPrice;
-            Discount = grossAmount * GetDiscountPercentage();
-            TotalAmount = grossAmount - Discount;
+            Subtotal = Quantity * UnitPrice;
+            DiscountAmount = Subtotal * GetDiscountRate();
+            TotalAmount = Subtotal - DiscountAmount;
         }
 
-        private decimal GetDiscountPercentage()
+        private decimal GetDiscountRate()
         {
             if (Quantity >= 10)
                 return 0.20m;
