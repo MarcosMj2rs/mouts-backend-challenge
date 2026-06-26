@@ -3,7 +3,8 @@
 namespace Ambev.DeveloperEvaluation.Domain.Entities
 {
     /// <summary>
-    /// Represents a sale aggregate root containing customer, branch and product information.
+    /// Represents a sale aggregate root.
+    /// Responsible for controlling its items and maintaining business consistency.
     /// </summary>
     public class Sale : BaseEntity
     {
@@ -25,13 +26,14 @@ namespace Ambev.DeveloperEvaluation.Domain.Entities
 
         public bool IsCancelled { get; private set; }
 
-        public DateTime CreatedAt { get; set; }
+        public DateTime CreatedAt { get; private set; }
 
-        public DateTime? UpdatedAt { get; set; }
+        public DateTime? UpdatedAt { get; private set; }
 
         public IReadOnlyCollection<SaleItem> Items => _items.AsReadOnly();
 
-        public Sale()
+        // Required by EF Core
+        private Sale()
         {
             CreatedAt = DateTime.UtcNow;
         }
@@ -53,6 +55,9 @@ namespace Ambev.DeveloperEvaluation.Domain.Entities
             SetCustomer(customerId, customerName);
             SetBranch(branchId, branchName);
 
+            if (items is null || !items.Any())
+                throw new DomainException("A sale must contain at least one item.");
+
             foreach (var item in items)
                 AddItem(item);
 
@@ -70,6 +75,9 @@ namespace Ambev.DeveloperEvaluation.Domain.Entities
         {
             EnsureNotCancelled();
 
+            if (items is null || !items.Any())
+                throw new DomainException("A sale must contain at least one item.");
+
             SetSaleNumber(saleNumber);
             SetSaleDate(saleDate);
             SetCustomer(customerId, customerName);
@@ -81,6 +89,7 @@ namespace Ambev.DeveloperEvaluation.Domain.Entities
                 AddItem(item);
 
             RecalculateTotal();
+
             UpdatedAt = DateTime.UtcNow;
         }
 
@@ -88,7 +97,13 @@ namespace Ambev.DeveloperEvaluation.Domain.Entities
         {
             EnsureNotCancelled();
 
+            foreach (var item in _items.Where(i => !i.IsCancelled))
+                item.Cancel();
+
             IsCancelled = true;
+
+            RecalculateTotal();
+
             UpdatedAt = DateTime.UtcNow;
         }
 
@@ -96,7 +111,7 @@ namespace Ambev.DeveloperEvaluation.Domain.Entities
         {
             EnsureNotCancelled();
 
-            var item = _items.FirstOrDefault(item => item.Id == itemId);
+            var item = _items.FirstOrDefault(i => i.Id == itemId);
 
             if (item is null)
                 throw new DomainException("Sale item not found.");
@@ -104,23 +119,22 @@ namespace Ambev.DeveloperEvaluation.Domain.Entities
             item.Cancel();
 
             RecalculateTotal();
+
             UpdatedAt = DateTime.UtcNow;
         }
 
         private void AddItem(SaleItem item)
         {
-            if (item is null)
-                throw new DomainException("Sale item cannot be null.");
+            ArgumentNullException.ThrowIfNull(item);
 
             _items.Add(item);
-            RecalculateTotal();
         }
 
         private void RecalculateTotal()
         {
             TotalAmount = _items
-                .Where(item => !item.IsCancelled)
-                .Sum(item => item.TotalAmount);
+                .Where(i => !i.IsCancelled)
+                .Sum(i => i.TotalAmount);
         }
 
         private void SetSaleNumber(string saleNumber)
@@ -128,7 +142,7 @@ namespace Ambev.DeveloperEvaluation.Domain.Entities
             if (string.IsNullOrWhiteSpace(saleNumber))
                 throw new DomainException("Sale number is required.");
 
-            SaleNumber = saleNumber;
+            SaleNumber = saleNumber.Trim();
         }
 
         private void SetSaleDate(DateTime saleDate)
@@ -148,7 +162,7 @@ namespace Ambev.DeveloperEvaluation.Domain.Entities
                 throw new DomainException("Customer name is required.");
 
             CustomerId = customerId;
-            CustomerName = customerName;
+            CustomerName = customerName.Trim();
         }
 
         private void SetBranch(Guid branchId, string branchName)
@@ -160,7 +174,7 @@ namespace Ambev.DeveloperEvaluation.Domain.Entities
                 throw new DomainException("Branch name is required.");
 
             BranchId = branchId;
-            BranchName = branchName;
+            BranchName = branchName.Trim();
         }
 
         private void EnsureNotCancelled()
