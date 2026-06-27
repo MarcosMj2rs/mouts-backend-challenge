@@ -1,6 +1,8 @@
 ﻿using Ambev.DeveloperEvaluation.Application.Sales.CreateSale;
+using Ambev.DeveloperEvaluation.Application.Sales.GetSale;
 using Ambev.DeveloperEvaluation.WebApi.Common;
 using Ambev.DeveloperEvaluation.WebApi.Features.Sales.CreateSale;
+using Ambev.DeveloperEvaluation.WebApi.Features.Sales.GetSale;
 using AutoMapper;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
@@ -45,6 +47,28 @@ namespace Ambev.DeveloperEvaluation.WebApi.Features.Sales
                 Success = true,
                 Message = "Sale created successfully",
                 Data = _mapper.Map<CreateSaleResponse>(response)
+            });
+        }
+
+        /// <summary>
+        /// Retrieves a sale by its identifier.
+        /// </summary>
+        [HttpGet("{id:guid}")]
+        [ProducesResponseType(typeof(ApiResponseWithData<GetSaleResponse>), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status404NotFound)]
+        public async Task<IActionResult> GetSale(Guid id, CancellationToken cancellationToken)
+        {
+            var query = new GetSaleQuery { Id = id };
+
+            var result = await _mediator.Send(query, cancellationToken);
+
+            var response = _mapper.Map<GetSaleResponse>(result);
+
+            return new OkObjectResult(new ApiResponseWithData<GetSaleResponse>
+            {
+                Success = true,
+                Message = "Sale retrieved successfully",
+                Data = response
             });
         }
     }
