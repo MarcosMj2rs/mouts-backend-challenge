@@ -41,7 +41,19 @@ namespace Ambev.DeveloperEvaluation.ORM.Repositories
 
         public async Task UpdateAsync(Sale sale, CancellationToken cancellationToken = default)
         {
-            _context.Sales.Update(sale);
+            var existingSale = await _context.Sales
+                .Include(s => s.Items)
+                .FirstOrDefaultAsync(s => s.Id == sale.Id, cancellationToken);
+
+            if (existingSale is null)
+                return;
+
+            _context.Entry(existingSale).CurrentValues.SetValues(sale);
+
+            _context.SaleItems.RemoveRange(existingSale.Items);
+
+            await _context.SaleItems.AddRangeAsync(sale.Items, cancellationToken);
+
             await _context.SaveChangesAsync(cancellationToken);
         }
 
