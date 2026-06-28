@@ -1,7 +1,11 @@
-﻿using Ambev.DeveloperEvaluation.Application.Sales.CreateSale;
+﻿using Ambev.DeveloperEvaluation.Application.Sales.CancelSale;
+using Ambev.DeveloperEvaluation.Application.Sales.CancelSaleItem;
+using Ambev.DeveloperEvaluation.Application.Sales.CreateSale;
 using Ambev.DeveloperEvaluation.Application.Sales.GetSale;
 using Ambev.DeveloperEvaluation.Application.Sales.GetSales;
 using Ambev.DeveloperEvaluation.WebApi.Common;
+using Ambev.DeveloperEvaluation.WebApi.Features.Sales.CancelSale;
+using Ambev.DeveloperEvaluation.WebApi.Features.Sales.CancelSaleItem;
 using Ambev.DeveloperEvaluation.WebApi.Features.Sales.CreateSale;
 using Ambev.DeveloperEvaluation.WebApi.Features.Sales.GetSale;
 using Ambev.DeveloperEvaluation.WebApi.Features.Sales.GetSales;
@@ -74,6 +78,11 @@ namespace Ambev.DeveloperEvaluation.WebApi.Features.Sales
             });
         }
 
+        /// <summary>
+        /// Retrieves all sales
+        /// </summary>
+        /// <param name="cancellationToken"></param>
+        /// <returns></returns>
         [HttpGet]
         [ProducesResponseType(typeof(ApiResponseWithData<List<GetSalesResponse>>), StatusCodes.Status200OK)]
         public async Task<IActionResult> GetSales(CancellationToken cancellationToken)
@@ -86,6 +95,60 @@ namespace Ambev.DeveloperEvaluation.WebApi.Features.Sales
             {
                 Success = true,
                 Message = "Sales retrieved successfully",
+                Data = response
+            });
+        }
+
+        /// <summary>
+        /// Cancels a sale.
+        /// </summary>
+        [HttpPatch("{id:guid}/cancel")]
+        [ProducesResponseType(typeof(ApiResponseWithData<CancelSaleResponse>), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status404NotFound)]
+        public async Task<IActionResult> CancelSale(Guid id, CancellationToken cancellationToken)
+        {
+            var command = new CancelSaleCommand { Id = id };
+
+            var result = await _mediator.Send(command, cancellationToken);
+
+            var response = _mapper.Map<CancelSaleResponse>(result);
+
+            return new OkObjectResult(new ApiResponseWithData<CancelSaleResponse>
+            {
+                Success = true,
+                Message = "Sale cancelled successfully",
+                Data = response
+            });
+        }
+
+        /// <summary>
+        /// Cancels a sale item.
+        /// </summary>
+        [HttpPatch("{saleId:guid}/items/{itemId:guid}/cancel")]
+        [ProducesResponseType(typeof(ApiResponseWithData<CancelSaleItemResponse>), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status404NotFound)]
+        public async Task<IActionResult> CancelSaleItem(Guid saleId, Guid itemId, CancellationToken cancellationToken)
+        {
+            var command = new CancelSaleItemCommand
+            {
+                SaleId = saleId,
+                ItemId = itemId
+            };
+
+            var result = await _mediator.Send(command, cancellationToken);
+
+            var response = new CancelSaleItemResponse
+            {
+                SaleId = result.SaleId,
+                ItemId = result.ItemId,
+                IsCancelled = result.IsCancelled,
+                SaleTotalAmount = result.SaleTotalAmount
+            };
+
+            return new OkObjectResult(new ApiResponseWithData<CancelSaleItemResponse>
+            {
+                Success = true,
+                Message = "Sale item cancelled successfully",
                 Data = response
             });
         }
