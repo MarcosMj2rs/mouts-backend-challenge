@@ -36,6 +36,9 @@ namespace Ambev.DeveloperEvaluation.WebApi.Features.Sales
         /// <summary>
         /// Creates a new sale.
         /// </summary>
+        /// <param name="request">The sale creation request.</param>
+        /// <param name="cancellationToken">Cancellation token.</param>
+        /// <returns>The created sale details.</returns>
         [HttpPost]
         [ProducesResponseType(typeof(ApiResponseWithData<CreateSaleResponse>), StatusCodes.Status201Created)]
         [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status400BadRequest)]
@@ -61,6 +64,9 @@ namespace Ambev.DeveloperEvaluation.WebApi.Features.Sales
         /// <summary>
         /// Retrieves a sale by its identifier.
         /// </summary>
+        /// <param name="id">The sale identifier.</param>
+        /// <param name="cancellationToken">Cancellation token.</param>
+        /// <returns>The sale details.</returns>
         [HttpGet("{id:guid}")]
         [ProducesResponseType(typeof(ApiResponseWithData<GetSaleResponse>), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status404NotFound)]
@@ -81,10 +87,10 @@ namespace Ambev.DeveloperEvaluation.WebApi.Features.Sales
         }
 
         /// <summary>
-        /// Retrieves all sales
+        /// Retrieves all sales.
         /// </summary>
-        /// <param name="cancellationToken"></param>
-        /// <returns></returns>
+        /// <param name="cancellationToken">Cancellation token.</param>
+        /// <returns>A list of sales.</returns>
         [HttpGet]
         [ProducesResponseType(typeof(ApiResponseWithData<List<GetSalesResponse>>), StatusCodes.Status200OK)]
         public async Task<IActionResult> GetSales(CancellationToken cancellationToken)
@@ -104,6 +110,9 @@ namespace Ambev.DeveloperEvaluation.WebApi.Features.Sales
         /// <summary>
         /// Cancels a sale.
         /// </summary>
+        /// <param name="id">The sale identifier.</param>
+        /// <param name="cancellationToken">Cancellation token.</param>
+        /// <returns>The cancelled sale details.</returns>
         [HttpPatch("{id:guid}/cancel")]
         [ProducesResponseType(typeof(ApiResponseWithData<CancelSaleResponse>), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status404NotFound)]
@@ -126,6 +135,10 @@ namespace Ambev.DeveloperEvaluation.WebApi.Features.Sales
         /// <summary>
         /// Cancels a sale item.
         /// </summary>
+        /// <param name="saleId">The sale identifier.</param>
+        /// <param name="itemId">The sale item identifier.</param>
+        /// <param name="cancellationToken">Cancellation token.</param>
+        /// <returns>The cancelled sale item details.</returns>
         [HttpPatch("{saleId:guid}/items/{itemId:guid}/cancel")]
         [ProducesResponseType(typeof(ApiResponseWithData<CancelSaleItemResponse>), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status404NotFound)]
@@ -155,6 +168,13 @@ namespace Ambev.DeveloperEvaluation.WebApi.Features.Sales
             });
         }
 
+        /// <summary>
+        /// Updates a sale.
+        /// </summary>
+        /// <param name="id">The sale identifier.</param>
+        /// <param name="request">The sale update request.</param>
+        /// <param name="cancellationToken">Cancellation token.</param>
+        /// <returns>The updated sale details.</returns>
         [HttpPut("{id:guid}")]
         [ProducesResponseType(typeof(ApiResponseWithData<UpdateSaleResponse>), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status400BadRequest)]
