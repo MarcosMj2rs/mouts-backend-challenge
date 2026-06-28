@@ -16,5 +16,11 @@ namespace Ambev.DeveloperEvaluation.Domain.Repositories
         Task UpdateAsync(Sale sale, CancellationToken cancellationToken = default);
 
         Task<bool> DeleteAsync(Guid id, CancellationToken cancellationToken = default);
+
+        Task SaveChangesAsync(CancellationToken cancellationToken = default);
+
+        Task ReplaceAsync(Sale sale, CancellationToken cancellationToken = default);
+
+        Task<Sale?> GetByIdAsNoTrackingAsync(Guid id, CancellationToken cancellationToken = default);
     }
 }

@@ -123,5 +123,13 @@ namespace Ambev.DeveloperEvaluation.Domain.Entities
             if (IsCancelled)
                 throw new DomainException("Cancelled items cannot be changed.");
         }
+
+        public void SetSaleId(Guid saleId)
+        {
+            if (saleId == Guid.Empty)
+                throw new DomainException("Sale id is required.");
+
+            SaleId = saleId;
+        }
     }
 }

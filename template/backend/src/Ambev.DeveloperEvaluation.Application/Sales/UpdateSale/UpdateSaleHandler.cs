@@ -22,7 +22,7 @@ namespace Ambev.DeveloperEvaluation.Application.Sales.UpdateSale
             if (!validationResult.IsValid)
                 throw new ValidationException(validationResult.Errors);
 
-            var sale = await _saleRepository.GetByIdAsync(command.Id, cancellationToken);
+            var sale = await _saleRepository.GetByIdAsNoTrackingAsync(command.Id, cancellationToken);
 
             if (sale is null)
                 throw new KeyNotFoundException($"Sale '{command.Id}' not found.");
@@ -44,7 +44,8 @@ namespace Ambev.DeveloperEvaluation.Application.Sales.UpdateSale
                 command.BranchName,
                 items);
 
-            await _saleRepository.UpdateAsync(sale, cancellationToken);
+            //await _saleRepository.UpdateAsync(sale, cancellationToken);
+            await _saleRepository.ReplaceAsync(sale, cancellationToken);
 
             return new UpdateSaleResult
             {

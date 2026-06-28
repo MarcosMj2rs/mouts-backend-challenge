@@ -41,19 +41,6 @@ namespace Ambev.DeveloperEvaluation.ORM.Repositories
 
         public async Task UpdateAsync(Sale sale, CancellationToken cancellationToken = default)
         {
-            var existingSale = await _context.Sales
-                .Include(s => s.Items)
-                .FirstOrDefaultAsync(s => s.Id == sale.Id, cancellationToken);
-
-            if (existingSale is null)
-                return;
-
-            _context.Entry(existingSale).CurrentValues.SetValues(sale);
-
-            _context.SaleItems.RemoveRange(existingSale.Items);
-
-            await _context.SaleItems.AddRangeAsync(sale.Items, cancellationToken);
-
             await _context.SaveChangesAsync(cancellationToken);
         }
 
@@ -68,6 +55,40 @@ namespace Ambev.DeveloperEvaluation.ORM.Repositories
             await _context.SaveChangesAsync(cancellationToken);
 
             return true;
+        }
+
+        public async Task SaveChangesAsync(CancellationToken cancellationToken = default)
+        {
+            await _context.SaveChangesAsync(cancellationToken);
+        }
+
+        public async Task ReplaceAsync(Sale sale, CancellationToken cancellationToken = default)
+        {
+            var existingSale = await _context.Sales
+                .Include(s => s.Items)
+                .FirstOrDefaultAsync(s => s.Id == sale.Id, cancellationToken);
+
+            if (existingSale is null)
+                return;
+
+            _context.Entry(existingSale).CurrentValues.SetValues(sale);
+
+            _context.SaleItems.RemoveRange(existingSale.Items);
+            await _context.SaveChangesAsync(cancellationToken);
+
+            foreach (var item in sale.Items)
+                item.SetSaleId(sale.Id);
+
+            await _context.SaleItems.AddRangeAsync(sale.Items, cancellationToken);
+            await _context.SaveChangesAsync(cancellationToken);
+        }
+
+        public async Task<Sale?> GetByIdAsNoTrackingAsync(Guid id, CancellationToken cancellationToken = default)
+        {
+            return await _context.Sales
+                .Include(s => s.Items)
+                .AsNoTracking()
+                .FirstOrDefaultAsync(s => s.Id == id, cancellationToken);
         }
     }
 }

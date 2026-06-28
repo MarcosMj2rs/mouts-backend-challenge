@@ -33,7 +33,7 @@ namespace Ambev.DeveloperEvaluation.Application.Sales.CancelSaleItem
 
             sale.CancelItem(command.ItemId);
 
-            await _saleRepository.UpdateAsync(sale, cancellationToken);
+            await _saleRepository.SaveChangesAsync(cancellationToken);
 
             return new CancelSaleItemResult
             {

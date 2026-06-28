@@ -34,7 +34,7 @@ namespace Ambev.DeveloperEvaluation.Application.Sales.CancelSale
 
             sale.Cancel();
 
-            await _saleRepository.UpdateAsync(sale, cancellationToken);
+            await _saleRepository.SaveChangesAsync(cancellationToken);
 
             return _mapper.Map<CancelSaleResult>(sale);
         }
