@@ -1,8 +1,10 @@
 ﻿using Ambev.DeveloperEvaluation.Application.Sales.CreateSale;
 using Ambev.DeveloperEvaluation.Application.Sales.GetSale;
+using Ambev.DeveloperEvaluation.Application.Sales.GetSales;
 using Ambev.DeveloperEvaluation.WebApi.Common;
 using Ambev.DeveloperEvaluation.WebApi.Features.Sales.CreateSale;
 using Ambev.DeveloperEvaluation.WebApi.Features.Sales.GetSale;
+using Ambev.DeveloperEvaluation.WebApi.Features.Sales.GetSales;
 using AutoMapper;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
@@ -68,6 +70,22 @@ namespace Ambev.DeveloperEvaluation.WebApi.Features.Sales
             {
                 Success = true,
                 Message = "Sale retrieved successfully",
+                Data = response
+            });
+        }
+
+        [HttpGet]
+        [ProducesResponseType(typeof(ApiResponseWithData<List<GetSalesResponse>>), StatusCodes.Status200OK)]
+        public async Task<IActionResult> GetSales(CancellationToken cancellationToken)
+        {
+            var result = await _mediator.Send(new GetSalesQuery(), cancellationToken);
+
+            var response = _mapper.Map<List<GetSalesResponse>>(result);
+
+            return new OkObjectResult(new ApiResponseWithData<List<GetSalesResponse>>
+            {
+                Success = true,
+                Message = "Sales retrieved successfully",
                 Data = response
             });
         }
