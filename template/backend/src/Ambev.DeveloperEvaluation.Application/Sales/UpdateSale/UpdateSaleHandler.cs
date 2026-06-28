@@ -1,4 +1,5 @@
-﻿using Ambev.DeveloperEvaluation.Domain.Entities;
+﻿using Ambev.DeveloperEvaluation.Application.Events;
+using Ambev.DeveloperEvaluation.Domain.Entities;
 using Ambev.DeveloperEvaluation.Domain.Repositories;
 using FluentValidation;
 using MediatR;
@@ -8,10 +9,12 @@ namespace Ambev.DeveloperEvaluation.Application.Sales.UpdateSale
     public class UpdateSaleHandler : IRequestHandler<UpdateSaleCommand, UpdateSaleResult>
     {
         private readonly ISaleRepository _saleRepository;
+        private readonly IEventPublisher _eventPublisher;
 
-        public UpdateSaleHandler(ISaleRepository saleRepository)
+        public UpdateSaleHandler(ISaleRepository saleRepository, IEventPublisher eventPublisher)
         {
             _saleRepository = saleRepository;
+            _eventPublisher = eventPublisher;
         }
 
         public async Task<UpdateSaleResult> Handle(UpdateSaleCommand command, CancellationToken cancellationToken)
@@ -44,8 +47,9 @@ namespace Ambev.DeveloperEvaluation.Application.Sales.UpdateSale
                 command.BranchName,
                 items);
 
-            //await _saleRepository.UpdateAsync(sale, cancellationToken);
             await _saleRepository.ReplaceAsync(sale, cancellationToken);
+
+            await _eventPublisher.PublishAsync(EventNames.SALE_UPDATED, sale, cancellationToken);
 
             return new UpdateSaleResult
             {
